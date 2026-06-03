@@ -11,3 +11,12 @@ Thumbs.db
 # Temp
 *.tmp
 *.log
+
+# Project
+docs/
+.superpowers/
+.claude/
+_零散/
+logo_output/
+read-screenshot/
+rimworld-modding-skill/

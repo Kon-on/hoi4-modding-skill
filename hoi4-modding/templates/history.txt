@@ -1,0 +1,320 @@
+# 国家历史设定模板 —— 国家起始状态、意识形态、科技、外交、OOB
+# 验证状态: 需要对照 vanilla 验证
+# Vanilla 参考: D:/steam/steamapps/common/Hearts of Iron IV/history/countries/GER - Germany.txt
+# 设计决策: 将核心设定放在文件顶部（首都、意识形态、政党），然后按逻辑组分层（科技→外交→OOB→特殊机制）。
+#           使用 <YourXxx> 占位符风格。中文注释标注关键字段的允许值和注意事项。
+
+########################################
+# 变体 1: 民主国家起始设定（示例：联邦共和国型）
+########################################
+# 适用于 1936 年开局。政党字段必须与 common/countries/<YourTag>.txt 中定义的 parties 一致。
+
+# ===== 首都 =====
+capital = <YourCapitalStateId>  # 省份/州 ID，如 64=Berlin
+
+# ===== 预订位（1936 开局基准） =====
+# 直接写在文件顶层的字段为 1936 年开局默认值
+
+# --- 意识形态与政党 ---
+set_politics = {
+    ruling_party = <YourRulingPartyTag>  # 必须与 countries 文件中某政党的 party_id 一致
+    parties = {
+        <YourDemocraticParty> = {
+            popularity = 55     # 支持率 0-100，总和应为 100
+        }
+        <YourCommunistParty> = {
+            popularity = 15
+        }
+        <YourFascistParty> = {
+            popularity = 5
+        }
+        <YourNeutralParty> = {
+            popularity = 25     # 非同盟/中立
+        }
+    }
+    last_election = "1933.1.1"  # 上次选举日期，YYYY.M.D 格式
+    election_frequency = 48     # 选举周期（月数），48 = 4 年
+    elections_allowed = yes     # yes/no — 是否允许选举
+}
+
+# --- 国家基础状态 ---
+set_stability = 0.60            # 基础稳定度，范围 0.00 ~ 1.00
+set_war_support = 0.10          # 基础战争支持度，范围 0.00 ~ 1.00
+set_political_power = 100       # 初始政治点数
+add_command_power = 25          # 初始指挥点数（整数）
+
+# --- 科研 ---
+set_research_slots = 3          # 科研槽数量（整数，通常 3~5）
+set_technology = {
+    # 步兵装备
+    infantry_weapons = 1        # 等级用整数：1=已研究
+    support_weapons = 1
+    # 工业
+    basic_machine_tools = 1
+    construction1 = 1
+    concentrated_industry = 1   # 或 dispersed_industry
+    # 电子工程
+    electronic_mechanical_engineering = 1
+    radio = 1                   # 可选：有 DLC 时可能需要不同技术 key
+    # 地面单位
+    motorised_infantry = 1
+    gw_artillery = 1
+    # 学说
+    # grand_battle_plan = 1     # 如有陆军学说科技定义
+}
+# 学说指定（对应 common/technologies/<doctrine>.txt 中定义）
+set_grand_doctrine = <YourLandDoctrineKey>       # 陆军学说
+# set_grand_doctrine = <YourNavalDoctrineKey>    # 海军学说
+# set_grand_doctrine = <YourAirDoctrineKey>      # 空军学说
+
+# --- 生产/工业 ---
+starting_train_buffer = 2       # 初始火车缓存值
+set_fuel_ratio = 0.5            # 燃油配给比例 0.0 ~ 1.0
+set_convoys = 100               # 初始运输船数量
+
+# --- 外交关系 ---
+# 单边外交关系（如互不侵犯条约）
+# diplomatic_relation = {
+#     country = <TargetTag>
+#     relation = non_aggression_pact
+# }
+
+# 双边关系修饰（对某国的看法）
+# add_opinion_modifier = {
+#     target = <TargetTag>
+#     modifier = <OpinionModifierKey>  # 定义在 common/opinion_modifiers/
+# }
+
+# 陆上通行权
+# give_military_access = <TargetTag>
+
+# 联盟（如已加入阵营——通常 1936 不预加）
+# create_faction = <YourFactionKey>
+
+# --- 部队编制模板（OOB） ---
+# OOB 定义在 history/units/ 目录，通过 set_oob 引用
+# set_oob = "<YourTag>_1936"  # 对应 history/units/<YourTag>_1936.txt
+
+# 如设置空军 OOB 模板
+# set_air_oob = "<YourTag>_1936_air"
+
+# 如设置海军 OOB 模板
+# set_naval_oob = "<YourTag>_1936_naval"
+
+# --- 国家旗标 ---
+# set_country_flag = <YourFlagKey>             # 基础旗标
+# set_global_flag = <YourGlobalFlagKey>        # 全局旗标（其他国可读取）
+
+# --- 变量 ---
+# 动态 modifier 变量。GER vanilla 使用大量 set_variable 来驱动 NS 效果。
+# set_variable = { var = <YourVarName> value = <YourValue> }
+# add_dynamic_modifier = { modifier = <YourDynamicModifierKey> }
+
+
+########################################
+# 变体 2: 法西斯国家起始设定（示例：军事独裁型）
+########################################
+# 与民主设定核心差异：（1）意识形态/选举设置不同 （2）war_support 偏高
+# （3）初期军事科技更全 （4）OOB 更详尽 （5）通常已有外交野心标记
+
+# ===== 首都 =====
+capital = <YourCapitalStateId>
+
+# --- 意识形态 ---
+set_politics = {
+    ruling_party = <YourFascistParty>
+    parties = {
+        <YourFascistParty> = {
+            popularity = 65     # 法西斯政权执政党支持率高
+        }
+        <YourDemocraticParty> = {
+            popularity = 15
+        }
+        <YourCommunistParty> = {
+            popularity = 10
+        }
+        <YourNeutralParty> = {
+            popularity = 10
+        }
+    }
+    last_election = "1933.1.1"
+    election_frequency = 48
+    elections_allowed = no         # 法西斯政权通常 no
+}
+
+# --- 基础状态 ---
+set_stability = 0.55               # 通过宣传维持稳定
+set_war_support = 0.30             # 军事化的 war support 偏高
+set_political_power = 150
+add_command_power = 50             # 军事政权指挥点更充裕
+
+# --- 科研 ---
+set_research_slots = 4             # 通常工业基础强（3~4）
+set_technology = {
+    # 步兵
+    infantry_weapons = 1
+    infantry_weapons1 = 1          # 注意 DLC 差异：某些版本步兵装备 key 不同
+    support_weapons = 1
+    tech_recon = 1
+    tech_engineers = 1
+    paratroopers = 1
+    # 炮兵
+    gw_artillery = 1
+    interwar_artillery = 1
+    interwar_antiair = 1
+    # 摩托化
+    motorised_infantry = 1
+    tech_trucks = 1
+    # 装甲
+    gwtank = 1                     # 或 gwtank_chassis (NSB DLC)
+    basic_light_tank = 1           # 或 basic_light_tank_chassis (NSB)
+    # 海军（如适用）
+    early_submarine = 1
+    basic_submarine = 1
+    early_destroyer = 1
+    basic_destroyer = 1
+    early_light_cruiser = 1
+    basic_light_cruiser = 1
+    early_heavy_cruiser = 1
+    basic_heavy_cruiser = 1
+    early_battleship = 1
+    basic_battleship = 1
+    transport = 1
+    # 空军
+    early_fighter = 1
+    fighter1 = 1
+    early_bomber = 1
+    tactical_bomber1 = 1
+    CAS1 = 1
+    naval_bomber1 = 1
+    # 工业
+    basic_machine_tools = 1
+    improved_machine_tools = 1
+    construction1 = 1
+    construction2 = 1
+    concentrated_industry = 1      # 集中工业（也可用 dispersed_industry）
+    concentrated_industry2 = 1
+    oil_processing = 1
+    fuel_refining = 1
+    fuel_silos = 1
+    synth_oil_experiments = 1
+    # 电子
+    electronic_mechanical_engineering = 1
+    radio = 1
+    basic_encryption = 1
+    basic_decryption = 1
+}
+
+# 陆军学说 (常见: blitzkrieg/grand_assault/fire_power/human_wave)
+set_grand_doctrine = <YourLandDoctrineKey>
+# set_grand_doctrine = <YourNavalDoctrineKey>  # 海军
+# set_grand_doctrine = <YourAirDoctrineKey>    # 空军
+
+# --- 生产 ---
+starting_train_buffer = 2
+set_fuel_ratio = 0.8             # 军事化国家燃油配比更高
+set_convoys = 300
+
+# --- 外交关系 ---
+# 法西斯国家常见：在 history 中设置初始战争目标（如德国对波兰的但泽战争目标）、
+# 与邻国的领土诉求宣示等
+#
+# 示例：
+# create_wargoal = {
+#     type = take_state_focus
+#     target = <TargetTag>
+#     generator = { <StateId1> <StateId2> ... }
+# }
+#
+# diplomatic_relation = { country = <AllyTag> relation = non_aggression_pact }
+# add_opinion_modifier = { target = <AllyTag> modifier = <ModifierKey> }
+
+# --- OOB（含 division_template 引用） ---
+# 法西斯国家 OOB 通常包含具体的 division_template 信息
+# set_oob = "<YourTag>_1936"      # 引用 history/units/<YourTag>_1936.txt
+#
+# 精锐部队/特殊编制可在 history/units/ 下单独定义：
+#   例：<YourTag>_1936.txt 中引用 division_template = { ... } 或
+#   直接使用 unit = { division = "name='...' ..." } 写法。
+#
+# set_air_oob = "<YourTag>_1936_air"    # 空军 OOB
+# set_naval_oob = "<YourTag>_1936_naval" # 海军 OOB
+
+# --- 初始国家精神/设计商 ---
+# add_ideas = {
+#     <YourIdeologySpirit>
+#     <YourDesignerCompany>
+#     <YourChiefOfXxx>
+# }
+
+# --- 特殊机制 ---
+# set_variable = { var = <YourVar> value = <YourValue> }
+# add_dynamic_modifier = { modifier = <YourModifierKey> }
+# set_country_flag = <YourFlagKey>
+
+
+########################################
+# 变体 3: DLC 条件分支（用于所有意识形态）
+########################################
+# HOI4 中科技和 OOB key 名随 DLC 变化。使用 if/limit 做条件分支：
+
+# if = {
+#     limit = { has_dlc = "No Step Back" }
+#     set_technology = {
+#         gwtank_chassis = 1
+#         basic_light_tank_chassis = 1
+#     }
+#     else = {
+#         set_technology = {
+#             gwtank = 1
+#             basic_light_tank = 1
+#         }
+#     }
+# }
+
+# 也可以为不同 DLC 组合设置不同 OOB：
+# if = {
+#     limit = { has_dlc = "No Step Back" }
+#     set_oob = "<YourTag>_1936_nsb"
+#     else = {
+#         set_oob = "<YourTag>_1936"
+#     }
+# }
+
+
+########################################
+# 通用字段速查
+########################################
+# ┌─────────────────────┬────────────────────────────────────────────────┐
+# │ 字段                 │ 说明                                           │
+# ├─────────────────────┼────────────────────────────────────────────────┤
+# │ capital              │ 首都所在州 ID（整数）                          │
+# │ set_politics         │ 意识形态设定块，含 parties / ruling_party      │
+# │ set_stability        │ 稳定度 0.00~1.00                              │
+# │ set_war_support      │ 战争支持度 0.00~1.00                          │
+# │ set_political_power  │ 初始政治点数                                   │
+# │ add_command_power    │ 增加指挥点数                                   │
+# │ set_research_slots   │ 科研槽数（正整数）                             │
+# │ set_technology       │ 科技键块，值=1 表示已研究                       │
+# │ set_grand_doctrine   │ 对应 common/technologies/ 中的学说 key          │
+# │ set_oob              │ 引用 history/units/ 中的 OOB 文件名（不含路径） │
+# │ set_air_oob          │ 同上，空军                                     │
+# │ set_naval_oob        │ 同上，海军                                     │
+# │ starting_train_buffer│ 初始火车缓存值                                 │
+# │ set_fuel_ratio       │ 燃油配给比例 0.0~1.0                           │
+# │ set_convoys          │ 初始运输船数量（整数）                         │
+# │ create_wargoal       │ 创建战争目标块                                 │
+# │ diplomatic_relation  │ 外交关系：non_aggression_pact / puppet / ...   │
+# │ add_opinion_modifier │ 双边关系修饰                                   │
+# │ give_military_access │ 授予军事通行权                                 │
+# │ set_country_flag     │ 设置国家旗标                                   │
+# │ set_global_flag      │ 设置全局旗标                                   │
+# │ set_variable         │ 设置变量（用于动态 modifier）                  │
+# │ add_dynamic_modifier │ 添加动态调节器                                 │
+# │ add_ideas            │ 初始国家精神/设计商列表                        │
+# │ complete_national_focus │ 标记国策为已完成（用于历史开局设置）        │
+# │ unlock_national_focus   │ 解锁国策（但不标记完成）                    │
+# │ set_autonomy         │ 设置附庸自主度                                 │
+# │ create_import        │ 建立资源进口                                   │
+# │ create_intelligence_agency │ 创建情报机构                              │
+# └─────────────────────┴────────────────────────────────────────────────┘

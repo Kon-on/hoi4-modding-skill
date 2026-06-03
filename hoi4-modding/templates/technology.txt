@@ -1,0 +1,344 @@
+# HOI4 科技树定义模板 —— 科技类别、层级、前置条件、解锁效果
+# 验证状态: 需要对照 vanilla 验证
+# Vanilla 参考: D:/steam/steamapps/common/Hearts of Iron IV/common/technologies/industry.txt
+#                D:/steam/steamapps/common/Hearts of Iron IV/common/technologies/infantry.txt
+# 设计决策: 科技在 common/technologies/ 下按类别分组文件（如 industry.txt, infantry.txt）。
+#           每类科技以 technologies = { ... } 包裹多个 technology = { ... } 块。
+#           子科技（sub_technologies）用于将一组的多个子项放在同一级 UI 中展示。
+#           使用 <YourXxx> 占位符。中文注释标注每个字段含义和常见可选值。
+
+# ====================================================================
+# 文件顶层结构: 一个 .txt 文件可包含一个或多个 categories
+# ====================================================================
+# 所有内容包裹在 technologies = { ... } 中。
+# 多个 categories = { ... } 定义不同"标签页"（如工业、步兵、装甲）。
+
+
+########################################
+# 变体 1: 单个科技（无子科技）
+########################################
+# 适用于：独立的工业科技、单步解锁的关键技术等
+
+technologies = {
+
+    # ---- 类别定义 ----
+    categories = {
+        # 工业科技类（category 名在 GUI 中显示）
+        category_industry  # 前置条件：需在 common/technology_tags/ 中定义
+
+        # ---- 单个科技定义 ----
+        technology = {
+            # ① 唯一标识（必须全局唯一）
+            name = <YourTechKey>  # 如 my_advanced_machine_tools
+
+            # ② 在科技树 GUI 中的位置 (x, y)，相对同目录内坐标系
+            #    不指定时用默认自动排列。但建议明确指定。
+            # position = { x = 2 y = 1 }
+
+            # ③ 所属层级标签（对应 category 名）
+            #    如未填写则继承父块 category
+            # technology_categories = {
+            #     category_industry
+            # }
+
+            # ④ 图标（对应 gfx/interface/technologies/ 下的图标文件）
+            #    未填则使用 category 默认图标
+            # picture = <YourPictureKey>
+
+            # ⑤ 前置科技（必须已研究才能研究此科技）
+            prerequisites = {
+                basic_machine_tools       # 前置科技 key，可以有多个
+                construction1
+            }
+
+            # ⑥ 研究花费（基础天数，受研究速度修正影响）
+            research_cost = 2.0  # 2.0 = 200 天（基础值），实际被速度 buff 影响
+
+            # ⑦ 年代/时间
+            start_year = 1938    # 最早可开始研究的年份
+            # 1938 年之前开始研究则适用 ahead_of_time_penalty（超前惩罚）
+
+            # ⑧ 文件夹/标签（影响 UI 分类显示）
+            folder = {
+                name = industry_folder   # 需与 common/technology_tags/ 中定义一致
+                position = { x = 3 y = 0 }  # 在文件夹内的坐标
+            }
+
+            # ⑨ 类别（可覆盖或补充，对应 technology_categories）
+            categories = {
+                industry
+            }
+
+            # ⑩ AI 权重（AI 研究该科技的倾向性）
+            ai_will_do = {
+                factor = 1.0  # 基础因子（大于 1 优先，小于 1 排斥）
+                modifier = {
+                    factor = 1.5
+                    has_war = yes    # 战时更优先研究
+                }
+            }
+
+            # ⑪ 研究完成时的效果（触发一个效果块）
+            on_research_complete = {
+                # 解锁装备（在 common/units/equipment/ 中定义的 archetype）
+                # unlock_equipment = {
+                #     archetype = <YourEquipmentArchetypeKey>
+                # }
+
+                # 解锁特殊单位
+                # enable_subunits = { battalion_type = <YourBattalionKey> }
+
+                # 添加 modifier（如工厂产出 +10%）
+                modify_building_resources = {
+                    building = industrial_complex
+                    resource = steel
+                    amount = 1
+                }
+
+                # 触发国家 modifier (定义在 common/ideas/ 或 scripted_modifiers)
+                # add_tech_bonus = {
+                #     bonus = 1.0
+                #     uses = 1
+                #     technology = <YourBonusCategoryKey>  # 对应 technology_tags
+                #     name = <YourTechBonusName>
+                # }
+
+                # 自定义效果块
+                custom_effect_tooltip = <YourLocKey>
+                # 实际效果可在 custom_effect_tooltip 下写 scripted effects
+            }
+
+            # ⑫ （可选）禁用条件：满足则不显示/不可研究
+            # disable = {
+            #     NOT = { has_dlc = "No Step Back" }
+            # }
+        }
+    }
+}
+
+
+########################################
+# 变体 2: 多层级科技 + 子科技 (sub_technologies)
+########################################
+# 适用于：步兵装备升级线、坦克型号序列、飞机系列、学说分支等
+# 子科技在 UI 中显示为同一卡片内的多个可研究项目。
+
+technologies = {
+
+    categories = {
+        category_infantry_weapons
+
+        # ---- 主科技定义（作为文件夹/分组） ----
+        technology = {
+            name = <YourWeaponLineKey>  # 如 my_infantry_weapons_line
+
+            # 位置、图标等
+            start_year = 1936
+            research_cost = 0  # 主节点本身不需要研究，只是个容器
+            # 如果设为 0，则主节点即时"研究"，直接展示其中子科技
+
+            folder = {
+                name = infantry_weapons_folder
+                position = { x = 0 y = 0 }
+            }
+
+            # 子科技列表——在同一 UI 卡片内显示多个可独立研究的子项
+            sub_technologies = {
+
+                # ---- 子科技 1：基础型 ----
+                <YourWeaponBaseKey> = {        # 如 my_infantry_equipment_0
+                    technology_categories = {
+                        category_infantry_weapons
+                    }
+                    prerequisites = {
+                        infantry_weapons       # 前置科技（可引用 vanilla 或自定义）
+                    }
+                    research_cost = 1.0
+                    start_year = 1936
+                    picture = <YourPictureKey>
+
+                    on_research_complete = {
+                        # 示例：解锁基础步枪装备
+                        # unlock_equipment = {
+                        #     archetype = my_infantry_equipment_0
+                        # }
+                        custom_effect_tooltip = <YourLocKey_Infantry0>
+                    }
+
+                    # 可选：允许通过国策/事件给予折扣
+                    # allow_bonus = yes  # 默认 yes，允许科技加速用于此科技
+                }
+
+                # ---- 子科技 2：改进型 ----
+                <YourWeaponImprovedKey> = {    # 如 my_infantry_equipment_1
+                    technology_categories = {
+                        category_infantry_weapons
+                    }
+                    prerequisites = {
+                        <YourWeaponBaseKey>    # 必须完成上一级
+                        support_weapons       # 添加副武器前置
+                    }
+                    research_cost = 1.5
+                    start_year = 1938
+
+                    on_research_complete = {
+                        # unlock_equipment = {
+                        #     archetype = my_infantry_equipment_1
+                        # }
+                        custom_effect_tooltip = <YourLocKey_Infantry1>
+                    }
+                }
+
+                # ---- 子科技 3：先进型 ----
+                <YourWeaponAdvancedKey> = {    # 如 my_infantry_equipment_2
+                    technology_categories = {
+                        category_infantry_weapons
+                    }
+                    prerequisites = {
+                        <YourWeaponImprovedKey>
+                        infantry_weapons2      # 同时依赖另一条科技线
+                    }
+                    research_cost = 2.0
+                    start_year = 1940
+
+                    on_research_complete = {
+                        # unlock_equipment = {
+                        #     archetype = my_infantry_equipment_2
+                        # }
+                        custom_effect_tooltip = <YourLocKey_Infantry2>
+                    }
+                }
+            }
+
+            # AI 权重（主科技节点）
+            ai_will_do = {
+                factor = 1.0
+            }
+        }
+    }
+}
+
+
+########################################
+# 变体 3: 学说科技（有分支/互斥选择）
+########################################
+# 适用于：陆军学说、海军学说、空军学说（在树中形成分支）
+# 使用 `mutually_exclusive = yes` 和 `allow_branch` 处理互斥分支
+
+technologies = {
+
+    categories = {
+        category_land_doctrine
+
+        # ---- 学说组（分支容器） ----
+        technology = {
+            name = <YourDoctrineLineKey>
+
+            start_year = 1936
+            research_cost = 0  # 容器本身不需研究
+
+            folder = {
+                name = land_doctrine_folder
+                position = { x = 2 y = 0 }
+            }
+
+            # 学说使用 `doctrine = yes` 标记以区分普通科技
+            # (doctrine 在 sub_technologies 内设置)
+
+            sub_technologies = {
+
+                # 分支 A：机动战学说
+                <YourDoctrineBranchA_Base> = {
+                    technology_categories = {
+                        category_land_doctrine
+                    }
+                    prerequisites = { grand_battle_plan }  # 从原版学说分支
+                    research_cost = 1.0
+                    start_year = 1936
+                    doctrine = yes  # 标记为学说——影响军队经验值获取、加成计算方式
+
+                    on_research_complete = {
+                        custom_effect_tooltip = <YourLocKey_DoctrineA_Base>
+                        # 实际效果通常在 common/ideas/ 或 common/technology_trees/
+                        # 中通过 add_doctrine_level 或单位 modifier 体现。
+                    }
+                }
+
+                # 分支 A：进阶
+                <YourDoctrineBranchA_Advanced> = {
+                    technology_categories = {
+                        category_land_doctrine
+                    }
+                    prerequisites = {
+                        <YourDoctrineBranchA_Base>
+                    }
+                    research_cost = 1.5
+                    start_year = 1938
+                    doctrine = yes
+                    # allow_branch = { ... }  # 可选：条件分叉
+                }
+
+                # 分支 B：火力优势学说（与分支 A 可同时拥有——互斥用 mutually_exclusive）
+                <YourDoctrineBranchB_Base> = {
+                    technology_categories = {
+                        category_land_doctrine
+                    }
+                    prerequisites = { grand_battle_plan }
+                    research_cost = 1.0
+                    start_year = 1936
+                    doctrine = yes
+
+                    # mutually_exclusive = <YourDoctrineBranchA_Base>  # 互斥：只能选一条线
+                    # 注意：互斥通常用 mutually_exclusive 或通过 allow = { ... } 实现
+                }
+            }
+
+            ai_will_do = {
+                factor = 1.0
+            }
+        }
+    }
+}
+
+
+########################################
+# 通用字段速查
+########################################
+# ┌───────────────────────────┬─────────────────────────────────────────────────┐
+# │ 字段                       │ 说明                                            │
+# ├───────────────────────────┼─────────────────────────────────────────────────┤
+# │ name                      │ 科技全局唯一 key                                 │
+# │ position                  │ GUI 坐标 { x = N y = N }（相对）                 │
+# │ picture                   │ 图标 key，对应 gfx/interface/technologies/        │
+# │ prerequisites             │ 前置科技 key 列表                               │
+# │ research_cost             │ 研究基础花费（天数/100），如 1.5 = 150 天         │
+# │ start_year                │ 最早研究年份（YYYY 整数）                        │
+# │ ahead_of_time_penalty     │ 超前惩罚因子，默认 2.0（每年 -100% 速度）         │
+# │ categories                │ 类别 key 列表                                   │
+# │ technology_categories     │ 覆盖/追加类别（在子科技中常用）                   │
+# │ sub_technologies          │ 子科技块；每块是一个 technology 定义              │
+# │ folder                    │ 在类别内的文件夹位置                             │
+# │ on_research_complete      │ 研究完成效果块                                   │
+# │ allow                     │ 显示/可研究条件（不满足则灰色但可见）             │
+# │ disable                   │ 禁用条件（不满足则隐藏）                         │
+# │ mutually_exclusive        │ 与另一科技互斥（名称列表）                        │
+# │ allow_bonus               │ 是否允许科技奖励时间，默认 yes                    │
+# │ doctrine                  │ yes 表示学说科技                                │
+# │ equipment                 │ 直接关联装备（简单关联，不需 on_research_complete）│
+# │ ai_will_do                │ AI 研究倾向权重块                               │
+# │ max_level                 │ 最大研究等级（用于可重复研究的 infinite 科技）     │
+# │ base_downgrade            │ 等级降级基础值                                   │
+# └───────────────────────────┴─────────────────────────────────────────────────┘
+
+# 注意：
+# - 科技 key 命名规范：使用小写 + 下划线，如 my_infantry_equipment_0
+# - 前置条件可以是 vanilla 科技，也可自定义。
+#   自定义科技必须在同一文件或已加载的其他 technology 文件中定义。
+# - research_cost > 0 的科技在开局时不会被"赠送"给国家——需在 history 中
+#   用 set_technology = { <key> = 1 } 来赠予。
+# - 如果某科技在 history 中 set_technology 但未在 technology 文件中定义，
+#   游戏启动时不会报错（只是无效果），但建议确保所有 key 都有定义。
+# - ahead_of_time_penalty 通常不需要显式设置，使用引擎默认值 2.0。
+#   如需自定义：ahead_of_time_penalty = { factor = 3.0 }
+# - 图标路径映射：在 gfx/interface/technologies/ 中放置 .dds 文件，
+#   然后在 interface/*.gfx 中注册 spriteType。

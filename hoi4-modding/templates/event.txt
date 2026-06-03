@@ -1,0 +1,231 @@
+# 事件骨架 —— 用于生成完整的 HOI4 事件文件
+# 验证状态: 需要对照 vanilla 验证
+# Vanilla 参考: events/AAT_Finland.txt (已验证 country_event, MTTH, is_triggered_only, option/ai_chance 结构),
+#                events/AAT_NewsEvents.txt (已验证 news_event, major, option/trigger 结构)
+# 设计决策: 采用四变体设计（MTTH / 触发型 / 新闻 / 隐藏），覆盖事件系统所有常见场景；
+#          所有关键字段带中文注释说明允许值、单位、默认值
+# ⚠ 贴图: picture 默认使用 GFX_report_event_generic_* 通用事件图，生成后提醒用户替换为自定义 .dds 文件
+
+################################################################################
+# 事件文件头                                                  #
+################################################################################
+
+# 每个事件文件必须声明命名空间（namespace），事件 ID 格式为 namespace.number
+add_namespace = <YourNamespace>          # 例: add_namespace = mymod_events
+
+################################################################################
+# 变体 1: country_event + MTTH (mean_time_to_happen)               #
+# 用途: 基于触发条件和平均时间触发的国家事件——最常用的事件类型             #
+################################################################################
+
+country_event = {
+    # id — 事件唯一标识，格式: namespace.number
+    id = <YourNamespace>.1               # 例: mymod_events.1
+
+    # title — 事件标题的本地化 key
+    title = <YourNamespace>.1.t          # 例: mymod_events.1.t
+
+    # desc — 事件描述文本的本地化 key
+    desc = <YourNamespace>.1.desc         # 例: mymod_events.1.desc
+
+    # picture — 事件图片 GFX key（可选，不填则使用默认图片）
+    picture = GFX_report_event_generic_european_war
+    # 可用通用图片: GFX_report_event_generic_european_war, GFX_report_event_generic_rifles,
+    #              GFX_report_event_generic_treaty, GFX_report_event_generic_factory
+
+    # trigger — 触发条件（事件在满足此条件后才开始计时）
+    trigger = {
+        tag = <YourCountryTag>           # 仅对特定国家检查
+        # 条件示例:
+        # has_war = yes
+        # has_government = fascism
+        # has_army_manpower = { size > 100000 }
+        # any_enemy_country = { surrender_progress > 0.5 }
+        # date > 1939.09.01
+    }
+
+    # mean_time_to_happen — 平均触发时间（MTTH）—— 随机事件的核心机制
+    mean_time_to_happen = {
+        days = 30                       # 基础平均天数（单位: 天）
+        # 参数示例: days = 30, months = 6, years = 1
+
+        # modifier — 条件修饰符，满足条件时加速或减速触发
+        modifier = {
+            factor = 0.5                 # <1 加速（0.5=快一倍）, >1 减速（2=慢一倍）
+            has_war = yes                # 战时触发加速
+        }
+        modifier = {
+            factor = 2.0                 # 减速: 和平时期更慢触发
+            has_war = no
+        }
+    }
+
+    # fire_only_once — 是否只触发一次
+    fire_only_once = yes                 # 允许值: yes / no; 事件历史性事件建议 yes
+
+    # major — 是否为重大新闻事件（可选，会影响事件在 UI 中的显示方式）
+    # major = no                          # 允许值: yes / no; 默认: no
+
+    # immediate — 事件触发后立即执行的效果（在玩家看到选项之前）
+    immediate = {
+        # hidden_effect = {               # 隐藏效果（不显示 tooltip）
+        #     set_country_flag = <YourFlag>
+        # }
+    }
+
+    # 选项 1 — 每个事件至少需要一个 option
+    option = {
+        # name — 选项按钮文本的本地化 key
+        name = <YourNamespace>.1.a       # 例: mymod_events.1.a
+
+        # ai_chance — AI 选择此选项的概率权重
+        ai_chance = {
+            base = 10                    # 基础权重（AI 选择概率 = 本选项权重 / 所有选项权重之和）
+            # modifier = {                # 条件修饰符
+            #     factor = 0             # 0 = AI 永远不会选
+            #     has_war = no
+            # }
+        }
+
+        # 选项效果 — 选择此选项后执行的效果
+        # add_political_power = 50
+        # add_stability = 0.05
+        # add_war_support = 0.05
+
+        # effect_tooltip — 效果浮窗描述（只显示信息，不产生实际效果）
+        # effect_tooltip = {
+        #     add_manpower = 5000
+        # }
+
+        # custom_effect_tooltip — 自定义效果提示的本地化 key
+        # custom_effect_tooltip = <YourNamespace>.1.a.tt
+    }
+
+    # 选项 2 — 多选项事件（可选）
+    option = {
+        name = <YourNamespace>.1.b
+
+        ai_chance = {
+            base = 0                     # base=0，AI 永远不选 → 需要 modifier 提升
+            modifier = {
+                factor = 10
+                has_government = communism
+            }
+        }
+
+        # add_political_power = -50
+        # add_stability = -0.05
+    }
+}
+
+################################################################################
+# 变体 2: is_triggered_only 事件 (触发型事件)                         #
+# 用途: 由国策/决议/其他事件直接触发，不需要 trigger 和 MTTH，专用回调事件  #
+################################################################################
+
+country_event = {
+    id = <YourNamespace>.2
+    title = <YourNamespace>.2.t
+    desc = <YourNamespace>.2.desc
+    picture = GFX_report_event_generic_sign_treaty3
+
+    # is_triggered_only — 标记为仅触发型事件（无 trigger 块，无 MTTH）
+    is_triggered_only = yes
+    # 触发方式: 在其他代码中使用 country_event = { id = <YourNamespace>.2 hours = 1 days = 1 }
+
+    fire_only_once = yes
+
+    # immediate — 触发时立即执行的逻辑
+    immediate = {
+        # 可以在 hidden_effect 中设置 flag 防止重复触发
+        hidden_effect = {
+            set_country_flag = <YourPrefix>_event_2_received
+        }
+    }
+
+    option = {
+        name = <YourNamespace>.2.a
+        # 无 ai_chance → AI 默认权重为 1
+
+        # 效果示例:
+        # add_political_power = 75
+    }
+}
+
+################################################################################
+# 变体 3: news_event (新闻事件)                                      #
+# 用途: 全局广播型新闻事件，所有满足 option trigger 的国家都会收到并做出反应 #
+################################################################################
+
+news_event = {
+    id = <YourNamespace>.3
+    title = <YourNamespace>.3.t
+    desc = <YourNamespace>.3.desc
+    picture = GFX_news_event_generic_sign_treaty3
+
+    # major — 是否作为重大新闻在 UI 顶部横幅显示
+    major = yes                          # 允许值: yes / no; 重大事件建议 yes
+
+    # is_triggered_only — 新闻事件通常为触发型
+    is_triggered_only = yes
+
+    # 每个 option 包含自己的 trigger — 满足触发条件的国家才会看到对应选项
+    option = {
+        name = <YourNamespace>.3.a
+        trigger = {
+            original_tag = <YourCountryTag>  # 事件发起国看到的选项
+        }
+    }
+
+    option = {
+        name = <YourNamespace>.3.b
+        trigger = {
+            NOT = { original_tag = <YourCountryTag> }
+            OR = {
+                has_war_with = <YourCountryTag>        # 与发起国处于战争
+                is_in_faction_with = <YourCountryTag>  # 与发起国同一阵营
+            }
+        }
+    }
+
+    option = {
+        name = <YourNamespace>.3.c
+        trigger = {
+            NOT = { original_tag = <YourCountryTag> }
+            NOT = { has_war_with = <YourCountryTag> }
+            NOT = { is_in_faction_with = <YourCountryTag> }
+        }
+    }
+}
+
+################################################################################
+# 变体 4: hidden 事件 (隐藏事件)                                      #
+# 用途: 纯逻辑事件，不显示事件弹窗，用于后台触发逻辑链或调用其他事件       #
+################################################################################
+
+country_event = {
+    id = <YourNamespace>.4
+    title = <YourNamespace>.4.t
+    desc = <YourNamespace>.4.desc
+
+    # 隐藏事件的典型特征组合: is_triggered_only + 无 picture + 使用 hidden_effect
+    is_triggered_only = yes
+
+    # 隐藏事件的核心: 所有逻辑放在 immediate 的 hidden_effect 中
+    immediate = {
+        hidden_effect = {
+            # 在此处执行所有后台逻辑，玩家不会看到任何弹窗
+            # 示例: 触发下一级事件链
+            # country_event = { id = <YourNamespace>.5 hours = 2 }
+            # set_country_flag = <YourPrefix>_chain_step_one_done
+        }
+    }
+
+    # 隐藏事件一般只有一个空选项（或自动选择的选项）
+    option = {
+        name = <YourNamespace>.4.a
+        # 无 visible 效果 → 玩家感知不到此事件发生
+    }
+    # 替代方案: 完全省略 option 块 → 需要验证版本兼容性
+    # 更安全的方式是保留一个空 option
+}

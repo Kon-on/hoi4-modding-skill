@@ -1,0 +1,213 @@
+# 决议骨架 —— 用于生成完整的 HOI4 决议文件
+# 验证状态: 需要对照 vanilla 验证
+# Vanilla 参考: common/decisions/ (已验证 decision 块结构, PP cost, available/visible/complete_effect 字段)
+# 设计决策: 采用三变体设计（常规 / 目标 / 定时决议），覆盖决议系统所有常见场景；
+#          所有关键字段带中文注释说明允许值、单位、默认值
+# ⚠ 贴图: icon 默认使用 GFX_decision_generic_* 通用图标，生成后提醒用户替换为自定义 .dds 文件
+
+################################################################################
+# 决议类别 (category) 和文件头                                   #
+################################################################################
+
+# 决策文件放在 common/decisions/ 目录下，文件内容以 categories 块组织
+# 所有决议都必须属于一个类别（category），类别名用作 UI 标签页和本地化 key
+
+################################################################################
+# 变体 1: 常规决议 (regular decision) —— 含 PP 花费               #
+# 用途: 最常见的决议类型，玩家花费政治点数执行，可重复或一次性             #
+################################################################################
+
+political_decision = {
+    # name — 决议的本地化名称 key（若使用变量名则自动推断 key）
+    name = <YourPrefix>_important_decision
+    # 也可显式指定: <YourPrefix>_important_decision = {
+
+    # icon — 按钮图标 GFX key（在 gfx/interface/decisions/ 中定义）
+    icon = GFX_decision_generic_political
+    # 常用通用图标: GFX_decision_generic_political, GFX_decision_generic_army,
+    #              GFX_decision_generic_navy, GFX_decision_generic_diplomatic
+
+    # cost — 执行决议所需的政治点数（PP）
+    cost = 50                            # 单位: 政治点数; 典型值: 25, 50, 75, 100, 150
+
+    # fire_only_once — 是否只能执行一次
+    fire_only_once = no                  # 允许值: yes / no; 重复使用的决议设为 no
+
+    # days_re_enable — 执行后多少天可以重新启用（可选，fire_only_once=no 时有效）
+    # days_re_enable = 180               # 单位: 天; 例: 180 = 半年后可再次执行
+
+    # available — 决议是否可用（不满足条件时灰显不可点）
+    available = {
+        # has_political_power > 50       # PP 不足时不可用（不填也能执行，只是 PP 变负）
+        # has_war = yes                  # 仅战时可用
+        # has_government = fascism       # 仅特定意识形态可用
+        # NOT = { has_country_flag = <YourPrefix>_decision_used }  # 若 fire_only_once=yes 的手动控制
+    }
+
+    # visible — 决议是否可见（不满足条件时完全隐藏）
+    visible = {
+        # 条件示例:
+        # has_full_independence = yes
+        # date > 1938.01.01
+    }
+
+    # cancel_trigger — 什么条件下决议被自动取消（可选）
+    # cancel_trigger = {
+    #     # 例: 参战后取消某个和平期决议
+    #     has_war = yes
+    # }
+
+    # cancel — 是否可被取消（如 prerequisites 不再满足时）
+    # cancel = yes                        # 允许值: yes / no
+
+    # remove_effect — 决议被移除/取消时的效果（可选）
+    remove_effect = {
+        # 清理效果：移除临时修改器、Flag 等
+        # remove_country_flag = <YourPrefix>_decision_active
+    }
+
+    # complete_effect — 执行决议时触发的效果
+    complete_effect = {
+        # 效果示例:
+        # add_political_power = -50       # PP 花费由 cost 字段管理，这里一般是额外效果
+        # add_stability = 0.05
+        # add_war_support = 0.10
+        # add_manpower = 10000
+        # set_country_flag = <YourPrefix>_decision_used
+
+        # 也可在此触发事件:
+        # country_event = { id = <YourNamespace>.10 days = 1 }
+    }
+
+    # ai_will_do — AI 执行此决议的权重
+    ai_will_do = {
+        factor = 1
+        # modifier = {
+        #     factor = 2.0
+        #     has_war = yes
+        # }
+    }
+}
+
+################################################################################
+# 变体 2: 目标决议 (targeted_decision) —— 以省份/国家为目标的决议    #
+# 用途: 针对特定省份（state）或国家执行的决议，如修建要塞、建立傀儡国等    #
+################################################################################
+
+targeted_decision = {
+    name = <YourPrefix>_target_state_decision
+    icon = GFX_decision_generic_deployment
+
+    cost = 75
+    fire_only_once = no
+
+    # targeted_decision 的可选目标类型
+    # 目标类型自动由决议的作用域决定：通常 targeting a state 或 targeting a country
+
+    # targeted_modifier — 对目标施加的临时修改器（可选，创建 modifier 后生效）
+    # targeted_modifier = {
+    #     tag = <YourPrefix>_target_modifier  # 引用 common/modifiers/ 中的 modifier
+    #     states = { <StateId1> <StateId2> }   # 指定省份（可选）
+    # }
+
+    # on_map_mode — 是否在地图模式中显示（用于建造类决议）
+    # on_map_mode = map_only                # 允许值: map_only / map_and_decisions_view
+
+    # available — 决议可用条件
+    available = {
+        # has_war = yes
+    }
+
+    # visible — 决议可见条件
+    visible = {
+        # 总是可见
+    }
+
+    # allowed — 目标允许条件（targeted_decision 特有）
+    # 规定了什么类型的省份/国家可以作为此决议的目标
+    allowed = {
+        # FROM = 执行此决议的国家
+        # THIS = 被选中的目标省份/国家
+        # 条件示例:
+        # is_controlled_by = FROM          # 目标省被决议执行国控制
+        # FROM = { is_owned_by = THIS }    # 目标属于执行国领土
+    }
+
+    # target_root_trigger — 目标根条件（可选，限制可选目标的整体范围）
+    # target_root_trigger = {
+    #     is_on_continent = europe
+    # }
+
+    # remove_effect — 决议被移除时的效果
+    remove_effect = {
+    }
+
+    # complete_effect — 对目标执行的效果
+    complete_effect = {
+        # 作用于目标（THIS = 目标省份/国家）
+        # add_building_construction = {
+        #     type = bunker
+        #     level = 1
+        #     province = THIS
+        # }
+    }
+
+    # ai_will_do — AI 行为权重
+    ai_will_do = {
+        factor = 1
+    }
+}
+
+################################################################################
+# 变体 3: 定时决议 (timed decision) —— 带 days_remove 的决议          #
+# 用途: 在一定天数后自动移除的决议，如临时动员、战时紧急措施等               #
+################################################################################
+
+political_decision = {
+    name = <YourPrefix>_timed_mobilization
+    icon = GFX_decision_generic_army
+
+    cost = 100
+    fire_only_once = yes
+
+    # days_remove — 决议执行后多少天自动移除（核心定时字段）
+    days_remove = 180                    # 单位: 天; 例: 180 = 半年后自动移除
+
+    # days_re_enable — 移除后多少天可重新执行
+    # days_re_enable = 365               # 单位: 天; 若省略则移除后不可重新执行
+
+    available = {
+        has_war = yes
+        NOT = { has_country_flag = <YourPrefix>_mobilization_done }
+    }
+
+    visible = {
+        # has_war = yes
+    }
+
+    # cancel_trigger — 在自动移除之前可以被取消的条件（可选）
+    # cancel_trigger = {
+    #     has_war = no                    # 战争结束时取消
+    # }
+
+    remove_effect = {
+        # 决议到期移除时执行的效果（收尾/清理）
+        # remove_country_flag = <YourPrefix>_mobilization_active
+        # add_stability = -0.05
+    }
+
+    complete_effect = {
+        # 执行决议时的效果
+        # add_mobilization_speed = 0.25   # 动员速度加成
+        # set_country_flag = <YourPrefix>_mobilization_active
+        # add_war_support = 0.10
+    }
+
+    ai_will_do = {
+        factor = 1
+        modifier = {
+            factor = 2.0
+            surrender_progress > 0.25     # 投降倾向超过 25% 时 AI 更可能执行
+        }
+    }
+}
